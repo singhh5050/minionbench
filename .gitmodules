@@ -1,3 +1,0 @@
-[submodule "external/minions"]
-	path = external/minions
-	url = https://github.com/HazyResearch/minions.git

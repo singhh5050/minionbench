@@ -105,7 +105,7 @@ Our analysis uses a dataset of prompts spanning 8 economic categories, with each
 
 - **Local** inference shows efficiency ranging from 0.9 to 1.6 tokens per joule, reflecting a smaller model's limited output capability per unit of energy.
 
-### 5. Efficiency vs. Speed Trade-Off (MOST IMPORTANT PLOT!)
+### 5. Efficiency vs. Speed Trade-Off (Arguably the most important plot!)
 
 ![Energy Efficiency vs. Generation Speed](visualizations/efficiency_vs_speed_by_protocol.png)
 

@@ -57,120 +57,106 @@ This section presents a systematic analysis of three LLM inference protocols—l
 - **Throughput**: Token generation speed (tokens per second)
 - **Output verbosity**: Total tokens generated per prompt
 
-Our analysis uses a dataset of prompts spanning 8 economic categories, with each prompt processed through all three protocols under identical conditions. All metrics were collected on the same hardware to ensure fair comparison.
+Our analysis uses a dataset of prompts spanning 8 economic categories, with each prompt processed through all three protocols under identical conditions.
 
 ## Results & Analysis
 
-### 1. Latency Analysis by Domain Category
+### 1. Raw Energy Consumption by Category
 
-![Latency Heatmap by Category and Protocol](visualizations/heatmap_latency_by_category_and_protocol.png)
+![Raw Energy Consumption by Category](visualizations/energy_by_category_protocol.png)
 
-The heatmap reveals significant performance variations across domains:
+- **Minion** points frequently lie to the right of the gray boxes. For example, in "Farming, fishing, and forestry" a Minion data point appears near 900 J versus the box median of around 300 J.
 
-- **Remote inference** consistently delivers the lowest latency (mean: 5.8s), with minimal variation across categories (σ = 2.1s). This reflects the consistent, dedicated resources available in cloud environments.
+- **Remote** inference often sits in the mid-range—around 600-800 J for "Arts, design, sports, entertainment, and media"—illustrating a stable but moderate energy cost.
 
-- **Local inference** shows moderate latency (mean: 34.2s) with substantial variance across domains (σ = 11.3s). Computer and mathematical prompts (29.5s) process significantly faster than arts and entertainment (46.9s), suggesting domain-specific optimization potential in local models.
+- **Local** inference tops out under 500 J almost everywhere, demonstrating it's the cheapest in absolute energy consumption but also produces far less verbose outputs.
 
-- **Minion hybrid approach** demonstrates the highest variance (σ = 18.7s), from 21.0s for computer tasks to 66.4s for healthcare queries. This variance likely stems from cache hit rates varying by domain, with technical domains benefiting more from token caching than specialized fields like healthcare.
+### 2. Raw Latency by Input Size
 
-Statistical analysis reveals that domain-protocol interaction effects are significant (p < 0.01), indicating that optimal protocol selection should be domain-aware.
+![Latency by Input Size](visualizations/latency_by_input_token_quartile_and_protocol.png)
 
-### 2. Energy Efficiency Distribution
+- **Short prompts (Q1)**: Minion peaks at approximately 45 seconds, remote at around 9 seconds, and local at about 39 seconds. This indicates Minion's startup overhead is most pronounced on small inputs.
 
-![Efficiency Distribution - Tokens per Joule](visualizations/violin_tokens_per_joule_by_protocol.png)
+- **Long prompts (Q4)**: Minion (~30 s) versus local (~41 s) versus remote (~7 s), showing that Minion scales better with input length than local inference does.
 
-Energy efficiency analysis reveals a surprising efficiency advantage for the hybrid approach:
+- **Variability**: Error bars illustrate high variance, with Minion's whiskers stretching up to 60 seconds in the middle quartiles (Q2-Q3).
 
-- **Minion** achieves the highest token-per-joule efficiency (median ~2.0 tok/J), despite moderate absolute energy consumption. This indicates that while startup costs are high, amortized efficiency improves as responses grow longer.
-
-- **Remote** efficiency (median ~0.85 tok/J) reflects the hidden energy costs of cloud infrastructure, which are typically not visible to end users but are captured in our comprehensive measurements.
-
-- **Local** efficiency (0.9-1.6 tok/J) demonstrates that smaller models can achieve reasonable efficiency despite limited output capability.
-
-The data suggests that Minion's caching strategy effectively offsets cloud energy costs while maintaining output quality, offering up to 135% improvement in energy efficiency over pure remote inference.
-
-### 3. Input Length vs. Performance Relationship
-
-![Latency by Input Token Quartile and Protocol](visualizations/latency_by_input_token_quartile_and_protocol.png)
-
-Input length analysis reveals clear scaling patterns:
-
-- **Short prompts (Q1)**: Minion exhibits high overhead (~45s) compared to local (~39s) and remote (~9s) approaches, indicating fixed startup costs dominate performance for brief interactions.
-
-- **Long prompts (Q4)**: Minion's relative performance improves (~30s) compared to local (~41s), demonstrating better scaling with input complexity. Remote latency remains consistently low (~7s) regardless of input length.
-
-- **Error distribution**: The variance within quartiles (shown by error bars) reveals that Minion's performance is most variable in mid-length prompts (Q2-Q3), suggesting that threshold effects in cache utilization may create performance cliffs at certain input lengths.
-
-This pattern suggests that Minion's architecture is optimized for medium-to-long interactions where cache benefits outweigh initialization costs.
-
-### 4. Efficiency vs. Throughput Trade-offs
-
-![Energy Efficiency vs. Generation Speed](visualizations/efficiency_vs_speed_by_protocol.png)
-
-The efficiency-throughput scatter plot reveals distinct operational clusters:
-
-- **Minion** occupies the top-right quadrant (high efficiency, high throughput), with typical values around 2.49 tok/J and 138 tok/s. This positioning demonstrates that hybrid approaches can simultaneously optimize for both metrics.
-
-- **Remote** inference shows high throughput (>60 tok/s) but lower efficiency (<1.2 tok/J), creating a "fast but costly" cluster in the visualization.
-
-- **Local** inference forms a tight cluster in the bottom-left quadrant (<1.6 tok/J, <15 tok/s), confirming the inherent limitations of on-device models.
-
-Point size in the visualization (representing output token count) correlates strongly with position in the efficiency-throughput space, with larger responses generally appearing in the top-right quadrant. This suggests that protocols that generate more comprehensive responses tend to achieve better amortized efficiency.
-
-### 5. System Stability Analysis
+### 3. Latency Drift Over Runs
 
 ![Latency Over Run Order](visualizations/latency_over_run_order.png)
 
-The time-series analysis of latency reveals important stability characteristics:
+- **Minion's** green curve shows significant jumps, from approximately 13 seconds (run 23) up to 66 seconds (run 33), revealing sensitivity to device load or caching warm-up conditions.
 
-- **Minion** demonstrates periodic fluctuations (e.g., from ~13s at run 23 to ~66s at run 33), suggesting sensitivity to cache state, device load, or memory pressure. This variability indicates potential optimization opportunities in cache management.
+- **Remote** inference (orange) remains relatively flat between 1-17 seconds throughout the runs, highlighting the stability advantages of a dedicated cloud endpoint.
 
-- **Remote** inference displays remarkable consistency (1-17s range) with minimal drift over time, highlighting the reliability advantages of dedicated cloud resources.
+- **Local** inference (blue) shows occasional performance spikes (e.g., run 27 at 59 seconds), likely due to model swapping or GPU contention on the device.
 
-- **Local** inference shows occasional spikes (e.g., run 27 at 59s) that correlate with system resource contention events, demonstrating vulnerability to background processes and thermal throttling.
+### 4. Efficiency Distribution (Tokens per Joule)
 
-The observed variability has implications for real-world applications where consistent response timing may be critical (e.g., interactive applications, time-sensitive decisions).
+![Efficiency Distribution - Tokens per Joule](visualizations/violin_tokens_per_joule_by_protocol.png)
 
-### 6. Output Verbosity Analysis
+- **Minion's** violin plot sits highest in the distribution, with a median around 2.0 tokens per joule and upper peaks reaching approximately 2.6 tokens per joule.
+
+- **Remote** inference centers around 0.85 tokens per joule, indicating lower energy efficiency despite its speed advantages.
+
+- **Local** inference shows efficiency ranging from 0.9 to 1.6 tokens per joule, reflecting a smaller model's limited output capability per unit of energy.
+
+### 5. Efficiency vs. Speed Trade-Off
+
+![Energy Efficiency vs. Generation Speed](visualizations/efficiency_vs_speed_by_protocol.png)
+
+- **Minion** data points cluster in the top-right quadrant of the plot, with representative values of 2.49 tokens per joule and 138 tokens per second, showing strong performance on both metrics.
+
+- **Remote** inference sits left of 1.2 tokens per joule but often achieves throughput above 60 tokens per second.
+
+- **Local** inference remains positioned in the bottom-left quadrant, below 1.6 tokens per joule and under 15 tokens per second.
+
+### 6. Verbosity by Protocol
 
 ![Distribution of Generated Tokens by Protocol](visualizations/distribution_generated_tokens_by_protocol.png)
 
-Output length analysis reveals substantial differences in response verbosity:
+- **Minion** outputs often exceed 2,000 tokens, with outliers reaching beyond 4,300 tokens, making it the most verbose protocol.
 
-- **Minion** produces the most verbose outputs (median >2,000 tokens, outliers >4,300), suggesting that hybrid approaches may benefit from reduced token-level filtering between edge and cloud.
+- **Remote** responses typically fall in the 300-800 token range.
 
-- **Remote** responses are moderate in length (300-800 tokens), reflecting typical cloud API behaviors and possible cost optimization.
+- **Local** inference is the most conservative in output length, generally producing under 500 tokens per prompt.
 
-- **Local** inference generates the most concise responses (<500 tokens), likely constrained by model size and computational limitations.
+### 7. Latency Heatmap by Category
 
-The stark difference in verbosity (up to 8.6x between protocols) must be considered when interpreting efficiency metrics, as more verbose responses may contain redundant information despite higher token counts.
+![Latency Heatmap by Category and Protocol](visualizations/heatmap_latency_by_category_and_protocol.png)
+
+The heatmap reveals domain-specific performance patterns:
+
+- For **Healthcare practitioners and technical** prompts: Minion takes 66.4 seconds, remote just 7.3 seconds, and local 40.6 seconds.
+
+- For **Computer and mathematical** prompts: Minion requires 21.0 seconds versus remote's 4.7 seconds and local's 29.5 seconds.
+
+This visualization helps identify the sweet spots—specific domains where Minion's batching and caching strategies outperform or underperform relative to the alternatives.
 
 ## Discussion & Implications
 
-Our analysis reveals that the Minion hybrid edge-cloud approach occupies a unique position in the inference protocol landscape:
+Our analysis reveals several key insights about the three inference protocols:
 
-1. **Efficiency Advantage**: Despite not being the absolute fastest or lowest-energy option, Minion achieves superior efficiency in tokens per joule and competitive throughput once initialized.
+1. **Efficiency vs. Speed Tradeoffs**: Minion isn't the fastest or the most energy-efficient in absolute terms, but it delivers superior efficiency when measured in tokens per joule and competitive throughput once initialized.
 
-2. **Input-Length Sensitivity**: The hybrid approach shows distinct performance patterns based on prompt length, with relative advantages emerging for medium-to-long interactions where caching benefits compound.
+2. **Input-Length Sensitivity**: Minion shows a clear pattern in performance based on prompt length. Its overhead is highest for small prompts, making it less suitable for brief interactions but increasingly advantageous for medium-to-large prompts.
 
-3. **Domain-Specific Performance**: Performance variations across domains suggest that protocol selection should be contextual, with Minion excelling in technical domains like computer science (21.0s vs. local's 29.5s) but underperforming in specialized fields like healthcare (66.4s vs. local's 40.6s).
+3. **Domain-Specific Performance**: The protocols show significant variance across domains. Minion performs best in technical domains like computer science (21.0s vs. local's 29.5s) but struggles with healthcare-related prompts (66.4s vs. local's 40.6s).
 
-4. **Verbosity Implications**: The substantially higher token output from Minion (up to 8.6x more tokens than local inference) requires careful interpretation of raw efficiency metrics and consideration of output quality.
+4. **Output Verbosity Considerations**: Minion produces substantially more verbose outputs (up to 8x more tokens than local inference), which must be considered when interpreting raw efficiency metrics.
 
-5. **Stability Considerations**: The observed variability in Minion's performance suggests that real-world implementations should include adaptive strategies to manage cache state and handle performance fluctuations.
+5. **Stability Characteristics**: Minion's performance varies more over time compared to the consistent remote inference, suggesting that deployment scenarios should account for potential variability.
 
-## Limitations & Future Work
+## Future Work
 
-While our analysis provides comprehensive performance metrics, several limitations suggest directions for future research:
+Building on these results, several directions for future research emerge:
 
-1. **Quality Assessment**: Future work should overlay human evaluation scores (e.g., ROUGE/BLEU) against efficiency metrics to determine if more efficient protocols produce better or merely more verbose responses.
+1. **Quality Assessment**: Overlay human evaluation scores (e.g., ROUGE/BLEU) against efficiency metrics to determine if more tokens correlate with better responses.
 
-2. **Cache Optimization**: Further research into domain-specific caching strategies could address the high variance observed in Minion's performance across categories.
+2. **Controlled Verbosity**: Experiment with capping max_tokens or implementing early-stopping mechanisms to control energy and latency budgets.
 
-3. **Energy Measurement Granularity**: More granular energy tracking could isolate the specific components of hybrid approaches that contribute most to efficiency gains.
+3. **Domain Optimization**: Further investigate why certain domains show better performance with different protocols to develop domain-specific inference strategies.
 
-4. **Controlled Verbosity**: Experiments with constrained output length (via max_tokens or early stopping) could provide more directly comparable efficiency metrics across protocols.
+4. **Cache Optimization**: Explore improvements to Minion's caching strategy to reduce the variability observed across runs.
 
-5. **Real-World Network Conditions**: Future benchmarks should evaluate performance under variable network conditions to better represent real-world deployment scenarios.
-
-In conclusion, this analysis demonstrates that hybrid edge-cloud approaches offer compelling efficiency advantages for LLM inference, particularly for extended interactions in domains with predictable token distributions. However, optimal protocol selection remains context-dependent and should consider domain, input characteristics, and stability requirements. 
+In conclusion, the Minion hybrid edge-cloud approach offers compelling efficiency advantages for LLM inference, particularly for extended interactions. However, optimal protocol selection remains context-dependent and should consider the specific domain, input characteristics, and stability requirements of the application. 

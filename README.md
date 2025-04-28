@@ -77,7 +77,7 @@ Statistical analysis reveals that domain-protocol interaction effects are signif
 
 ### 2. Energy Efficiency Distribution
 
-![Efficiency Distribution - Tokens per Joule](visualizations/avg_tokens_per_joule_by_protocol.png)
+![Efficiency Distribution - Tokens per Joule](visualizations/violin_tokens_per_joule_by_protocol.png)
 
 Energy efficiency analysis reveals a surprising efficiency advantage for the hybrid approach:
 

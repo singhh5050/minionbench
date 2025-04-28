@@ -8,7 +8,7 @@ from pydantic import BaseModel
 # Import directly from minions package
 from minions.clients.ollama import OllamaClient
 from minions.clients.openai import OpenAIClient
-from minions.minions import Minions
+from minions.minion import Minion
 
 class StructuredLocalOutput(BaseModel):
     explanation: str
@@ -18,11 +18,30 @@ class StructuredLocalOutput(BaseModel):
 # Debug: Check if API key is available
 api_key = os.getenv("OPENAI_API_KEY")
 
+# Define a custom advice prompt for general-purpose queries
+# This replaces the default KPI-focused prompt
+GENERAL_ADVICE_PROMPT = """
+You are a helpful assistant. Your task is to advise a small language model on how to respond to the user's query.
+
+QUERY: {query}
+METADATA: {metadata}
+
+Please provide guidance on how to answer this query in a helpful, accurate, and comprehensive manner.
+Focus on:
+1. Understanding the main intent of the query
+2. Providing relevant information directly addressing the question
+3. Organizing the response in a clear and coherent way
+4. Including any necessary context or background information
+
+Your advice will help the smaller model generate a better response.
+"""
+
 # Initialize Minion once
 local_client = OllamaClient(
     model_name="mistral:latest",
     temperature=0.0,
-    structured_output_schema=StructuredLocalOutput,
+    # Structured output not needed for singular Minion
+    # structured_output_schema=StructuredLocalOutput,
     num_ctx = 1200
 )
 
@@ -31,16 +50,17 @@ remote_client = OpenAIClient(
     api_key=api_key
 )
 
-minion = Minions(local_client, remote_client)
+# Initialize using singular Minion protocol instead of Minions
+minion = Minion(
+    local_client=local_client, 
+    remote_client=remote_client
+)
 
 @timeit
 def infer(prompt: str):
-    generic_context = [prompt]
-    
     return minion(
-        task="Please respond to the provided prompt.",
-        context=generic_context, 
-        doc_metadata="benchmark",
+        task=prompt,  # For Minion (singular), pass the prompt directly as the task
+        context=[],   # No need for context here, the task itself is the question
         max_rounds=1
     )
 
@@ -77,25 +97,51 @@ def run_minions(prompt: str):
     # Calculate output tokens
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
-    answer = result['meta'][0]['local']['jobs'][0]['output']['answer']
+    
+    # For Minion (singular) the answer is in the final_answer field
+    answer = result.get("final_answer", "No result found")
     output_tokens = len(tokenizer.encode(answer, add_special_tokens=False))
     
     # === Remote energy (estimate only if remote ran) ===
-    used_remote = remote_prompt_tokens > 0
-    if used_remote and remote_runtime > 0:
-        cloud_e = cloud_inference_energy_estimate_w_model_attributes(
-            input_tokens=remote_prompt_tokens,
-            output_tokens=remote_completion_tokens,
-            model_name="gpt-4o",
-            gpu_name="H100",
-            attention_mode="quadratic",
-            # inference_wall_time_sec=remote_runtime
-        )
-        energy_remote_j = cloud_e["total_energy_joules"]
-    else:
-        energy_remote_j = 0.0
+    cloud_e = cloud_inference_energy_estimate_w_model_attributes(
+        input_tokens=remote_prompt_tokens,
+        output_tokens=remote_completion_tokens,
+        model_name="gpt-4o",
+        gpu_name="H100",
+        attention_mode="quadratic",
+        # inference_wall_time_sec=remote_runtime
+    )
+    energy_remote_j = cloud_e["total_energy_joules"]
 
     total_energy_j = energy_local_j + energy_remote_j
+
+    # Simple recursive print of result structure to a file (won't affect other code)
+    try:
+        import json
+        import os
+        os.makedirs("logs", exist_ok=True)
+        
+        # Helper function to make objects JSON serializable
+        def make_json_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_json_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_serializable(item) for item in obj]
+            elif hasattr(obj, "__dict__"):
+                return make_json_serializable(obj.__dict__)
+            else:
+                try:
+                    json.dumps(obj)
+                    return obj
+                except:
+                    return str(obj)
+                    
+        # Save result to file without affecting main code
+        with open("logs/minions_debug.json", "w") as f:
+            json.dump(make_json_serializable(result), f, indent=2)
+    except:
+        # Silently fail if anything goes wrong to not impact main code
+        pass
 
     return {
         "prompt": prompt,
@@ -105,8 +151,5 @@ def run_minions(prompt: str):
         "protocol": "minions",
         "model_name": "hybrid-mistral-gpt4o",
         "generated_tokens": total_internal_tokens,
-        "output_tokens": output_tokens,
-        # Additional metrics that other runners don't have
-        "energy_local_j": energy_local_j,
-        "energy_remote_j": energy_remote_j,
+        "output_tokens": output_tokens
     }

@@ -22,12 +22,6 @@ def main(sample_size):
     results_path = "results/metrics.csv"
     os.makedirs("results", exist_ok=True)
 
-    # Create or clear existing file
-    if os.path.exists(results_path):
-        os.remove(results_path)
-
-    first_row = True  # Track whether to write the header
-
     for prompt_obj in prompts:
         prompt_text = prompt_obj["prompt"]
         category = prompt_obj["category"]
@@ -42,15 +36,21 @@ def main(sample_size):
         ]:
             try:
                 result = runner(prompt_text)
-                result["protocol"] = protocol_name
-                result["prompt"] = prompt_text
+                
                 result["category"] = category
                 result["input_tokens"] = input_tokens
-                
-                # Save to CSV incrementally
+                result["prompt"] = prompt_text
+                result["protocol"] = protocol_name
+
+                # Save immediately after each result
                 df = pd.DataFrame([result])
-                df.to_csv(results_path, mode='a', header=first_row, index=False)
-                first_row = False
+
+                if not os.path.exists(results_path):
+                    df.to_csv(results_path, index=False)
+                    logging.info(f"📄 Created new results file with first entry.")
+                else:
+                    df.to_csv(results_path, mode="a", header=False, index=False)
+                    logging.info(f"➕ Appended new entry to existing results.")
 
                 logging.info(f"✅ {protocol_name} | {prompt_text[:40]}...")
             except Exception as e:

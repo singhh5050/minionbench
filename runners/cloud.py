@@ -37,5 +37,6 @@ def run_cloud(prompt):
         "energy_j": energy_metrics["total_energy_joules"],
         "protocol": "remote",
         "model_name": "gpt-4o",
-        "generated_tokens": output_tokens  # Assuming no internal reasoning patterns
+        "generated_tokens": output_tokens,  # Assuming no internal reasoning patterns
+        "output_tokens": output_tokens     # Add output_tokens for consistency
     }

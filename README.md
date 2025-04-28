@@ -3,17 +3,17 @@
 MinionBench is an advanced benchmarking framework for evaluating different LLM inference protocols with a focus on performance, energy efficiency, and output quality. It supports thorough comparisons between local execution, cloud-based inference, and hybrid edge-cloud streaming approaches.
 
 ## Key Features
-- **Stringent Preprocessing**: In preprocessing.ipynb, I implemented file ingestion, prompt extraction, supersetting, threshold-aware NSFW filters, economic‑category filters, missing‑field diagnostics, and a bevy of category/model plots to create a final DataFrame that could be used for the eval harness (clean, non‑empty, non‑NSFW, and domain‑correct).
 
 - **Multi-protocol Support**: Benchmark across three distinct inference protocols:
-  - **Local**: Inference runs entirely on a local, resource-constrained device via Ollama (Mistral model)
-  - **Remote**: Calls to powerful cloud-hosted models (e.g., GPT-4o)
-  - **Minion**: A hybrid edge/cloud streaming pipeline combining on-device caching with remote generation (GPT-4o + Mistral). I chose Minion as opposed to Minions, because Minions is optimized for long context parsing given a specific task, whereas my dataset was simply short Q&As.
+  - **Local**: Inference runs entirely on a local, resource-constrained device
+  - **Remote**: Calls to powerful cloud-hosted models (e.g., GPT-4o, Claude)
+  - **Minion**: A hybrid edge/cloud streaming pipeline combining on-device caching with remote generation
 
 - **Comprehensive Metrics**: Automated collection of:
   - Latency (total and streaming)
-  - Energy consumption (device-level and on the cloud)
+  - Energy consumption (device-level)
   - Token counts (input/output)
+  - Quality metrics
 
 - **Diverse Workloads**: Pre-configured prompt sets spanning multiple domains:
   - Arts and entertainment
@@ -25,13 +25,7 @@ MinionBench is an advanced benchmarking framework for evaluating different LLM i
   - General management
   - Agriculture and more
 
-- **Rich Visualization Suite**: Generates a ton of insightful plots
-  - Heatmaps
-  - Boxplots
-  - Scatterplots
-  - Lineplots
-  - Catplot
-  - Violin Charts
+- **Rich Visualization Suite**: Generate insightful plots for performance analysis
 
 ## Getting Started
 
@@ -107,7 +101,7 @@ Our analysis uses a dataset of prompts spanning 8 economic categories, with each
 
 - **Local** inference shows efficiency ranging from 0.9 to 1.6 tokens per joule, reflecting a smaller model's limited output capability per unit of energy.
 
-### 5. Efficiency vs. Speed Trade-Off (MOST IMPORTANT PLOT!!)
+### 5. Efficiency vs. Speed Trade-Off
 
 ![Energy Efficiency vs. Generation Speed](visualizations/efficiency_vs_speed_by_protocol.png)
 
@@ -116,8 +110,6 @@ Our analysis uses a dataset of prompts spanning 8 economic categories, with each
 - **Remote** inference sits left of 1.2 tokens per joule but often achieves throughput above 60 tokens per second.
 
 - **Local** inference remains positioned in the bottom-left quadrant, below 1.6 tokens per joule and under 15 tokens per second.
-
-**Efficiency vs. speed is the heart of the story—and Minion wins at both. By clustering in the top-right of the plot, Minion proves it’s not just faster or greener — it’s both, decisively beating local and remote inference.**
 
 ### 6. Verbosity by Protocol
 
@@ -141,15 +133,21 @@ The heatmap reveals domain-specific performance patterns:
 
 This visualization helps identify the sweet spots—specific domains where Minion's batching and caching strategies outperform or underperform relative to the alternatives.
 
+### 7. Generated vs. Output Tokens for Minion
+
+![Generated vs. Output Tokens for Minion](visualizations/minion_generated_vs_output_by_category.png)
+
+This plot shows that Minion often generates 10–30× more tokens internally than it ultimately outputs. Categories like Life, Physical, and Social Science and General Management have especially high ratios (~28–30×), suggesting Minion runs long, complex chains of reasoning before finalizing an answer. Even in simpler fields like Arts and Entertainment, Minion still generates about 11× the final token count. Whether this thoroughness leads to better answers—or just inefficiency—depends on downstream evaluation.
+
 ## Discussion & Implications
 
 Our analysis reveals several key insights about the three inference protocols:
 
 1. **Efficiency vs. Speed Tradeoffs**: Minion isn't the fastest or the most energy-efficient in absolute terms, but it delivers superior efficiency when measured in tokens per joule and competitive throughput once initialized.
 
-2. **Input-Length Sensitivity**: Minion shows a clear pattern in performance based on prompt length. Its relative overhead is highest for small prompts, making it less suitable for brief interactions but increasingly advantageous for medium-to-large prompts.
+2. **Input-Length Sensitivity**: Minion shows a clear pattern in performance based on prompt length. Its overhead is highest for small prompts, making it less suitable for brief interactions but increasingly advantageous for medium-to-large prompts.
 
-3. **Domain-Specific Performance**: The protocols show significant variance across domains. Minion performs best in technical domains like computer science (21.0s vs. local's 29.5s) but struggles (takes more time) with healthcare-related prompts (66.4s vs. local's 40.6s).
+3. **Domain-Specific Performance**: The protocols show significant variance across domains. Minion performs best in technical domains like computer science (21.0s vs. local's 29.5s) but struggles with healthcare-related prompts (66.4s vs. local's 40.6s).
 
 4. **Output Verbosity Considerations**: Minion produces substantially more verbose outputs (up to 8x more tokens than local inference), which must be considered when interpreting raw efficiency metrics.
 
@@ -159,8 +157,12 @@ Our analysis reveals several key insights about the three inference protocols:
 
 Building on these results, several directions for future research emerge:
 
-1. **Quality Assessment**: Overlay LLM-as-a-judge scores against efficiency metrics to determine if more generated tokens correlate with better final responses.
+1. **Quality Assessment**: Overlay human evaluation scores (e.g., ROUGE/BLEU) against efficiency metrics to determine if more tokens correlate with better responses.
 
 2. **Controlled Verbosity**: Experiment with capping max_tokens or implementing early-stopping mechanisms to control energy and latency budgets.
 
 3. **Domain Optimization**: Further investigate why certain domains show better performance with different protocols to develop domain-specific inference strategies.
+
+4. **Cache Optimization**: Explore improvements to Minion's caching strategy to reduce the variability observed across runs.
+
+In conclusion, the Minion hybrid edge-cloud approach offers compelling efficiency advantages for LLM inference, particularly for extended interactions. However, optimal protocol selection remains context-dependent and should consider the specific domain, input characteristics, and stability requirements of the application. 

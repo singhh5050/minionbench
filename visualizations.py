@@ -137,6 +137,44 @@ def main():
     plt.savefig("visualizations/energy_by_category_protocol_overlay.png")
     plt.close()
 
+    # 9. Minion: Generated vs. Output Tokens by Category (with ratio annotation)
+    df_minion = df[df['protocol'] == 'minion']
+    summary = (
+        df_minion
+        .groupby('category')
+        .agg(
+            generated_tokens=('generated_tokens', 'mean'),
+            output_tokens=('output_tokens', 'mean')
+        )
+        .reset_index()
+    )
+    summary['ratio'] = summary['generated_tokens'] / summary['output_tokens']
+    melt_summary = summary.melt(id_vars='category', var_name='metric', value_name='tokens')
+
+    plt.figure(figsize=(10, 6))
+    ax = sns.barplot(
+        data=melt_summary,
+        y='category', x='tokens',
+        hue='metric', palette='Set2',
+        ci=None,
+        order=summary['category']  # ensure correct category order
+    )
+    # Annotate ratio next to each bar group
+    for idx, row in summary.iterrows():
+        max_val = max(row['generated_tokens'], row['output_tokens'])
+        ax.text(
+            max_val * 1.02, idx,
+            f"{row['ratio']:.2f}×",
+            va='center'
+        )
+    plt.title('Minion: Generated vs. Output Tokens by Category')
+    plt.xlabel('Token Count')
+    plt.ylabel('Economic Category')
+    plt.legend(title='Metric', bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+    plt.tight_layout()
+    plt.savefig("visualizations/minion_generated_vs_output_by_category.png")
+    plt.close()
+
 
 
 if __name__ == '__main__':

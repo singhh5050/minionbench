@@ -115,7 +115,7 @@ Our analysis uses a dataset of prompts spanning 8 economic categories, with each
 
 - **Local** inference remains positioned in the bottom-left quadrant, below 1.6 tokens per joule and under 15 tokens per second.
 
-- *This plot shows that Minion often generates 10–30× more tokens internally than it ultimately outputs. Categories like Life, Physical, and Social Science and General Management have especially high ratios (~28–30×), suggesting Minion runs long, complex chains of reasoning before finalizing an answer. Even in simpler fields like Arts and Entertainment, Minion still generates about 11× the final token count. Whether this thoroughness leads to better answers—or just inefficiency—depends on downstream evaluation.*
+- *This plot captures the core trade-off between energy efficiency and generation speed. Minion not only achieves the highest throughput but also delivers the best energy efficiency (per token), clustering in the top-right quadrant—clearly outperforming both local and remote inference.*
 
 ### 6. Verbosity by Protocol
 
@@ -143,7 +143,7 @@ This visualization helps identify the sweet spots—specific domains where Minio
 
 ![Generated vs. Output Tokens for Minion](visualizations/minion_generated_vs_output_by_category.png)
 
-This plot shows that Minion often generates 10–30× more tokens internally than it ultimately outputs. Categories like Life, Physical, and Social Science and General Management have especially high ratios (~28–30×), suggesting Minion runs long, complex chains of reasoning before finalizing an answer. Even in simpler fields like Arts and Entertainment, Minion still generates about 11× the final token count. Whether this thoroughness leads to better answers—or just inefficiency—depends on downstream evaluation.
+This plot shows that Minion often generates 10–30× more tokens internally than it ultimately outputs. Categories like Life, Physical, and Social Science and General Management have especially high ratios (~28–30×), suggesting Minion runs long, complex chains of reasoning before finalizing an answer. Even in simpler fields like Arts and Entertainment, Minion still generates about 11× the final token count. Whether this thoroughness leads to better answers—or just inefficiency—depends on downstream evaluation of output quality.
 
 ## Discussion & Implications
 

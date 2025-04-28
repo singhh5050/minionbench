@@ -63,7 +63,7 @@ Our analysis uses a dataset of prompts spanning 8 economic categories, with each
 
 ### 1. Raw Energy Consumption by Category
 
-![Raw Energy Consumption by Category](visualizations/energy_by_category_protocol.png)
+![Raw Energy Consumption by Category](visualizations/energy_by_category_protocol_overlay.png)
 
 - **Minion** points frequently lie to the right of the gray boxes. For example, in "Farming, fishing, and forestry" a Minion data point appears near 900 J versus the box median of around 300 J.
 

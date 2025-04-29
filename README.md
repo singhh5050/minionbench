@@ -10,9 +10,9 @@
   - **Minion**: A hybrid edge/cloud streaming pipeline combining on-device caching with remote generation (GPT-4o + Mistral)
 
 - **Comprehensive Metrics**: Automated collection of:
-  - Latency (total and streaming)
+  - Latency
   - Energy consumption (device-level + on-the-cloud)
-  - Token counts (input/output)
+  - Token counts (input/output/generated)
 
 - **Diverse Workloads**: Pre-configured prompt sets spanning multiple domains:
   - Arts and entertainment

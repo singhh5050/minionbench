@@ -89,7 +89,7 @@ Our analysis uses a dataset of prompts spanning 8 economic categories, with each
 
 ![Latency Over Run Order](visualizations/latency_over_run_order.png)
 
-- **Minion's** green curve shows significant jumps, from approximately 13 seconds (run 23) up to 66 seconds (run 33), revealing sensitivity to device load or caching warm-up conditions.
+- **Minion's** green curve shows significant jumps, from approximately 13 seconds (run 23) up to 66 seconds (run 33), likely due to the non-deterministic amount of "back-and-forth chat" between the local and remote LMs
 
 - **Remote** inference (orange) remains relatively flat between 1-17 seconds throughout the runs, highlighting the stability advantages of a dedicated cloud endpoint.
 

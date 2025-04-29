@@ -79,7 +79,7 @@ Our analysis uses a dataset of prompts spanning 8 economic categories, with each
 
 ![Latency by Input Size](visualizations/latency_by_input_token_quartile_and_protocol.png)
 
-- **Short prompts (Q1)**: Minion peaks at approximately 45 seconds, remote at around 9 seconds, and local at about 39 seconds. This indicates Minion's startup overhead is most pronounced on small inputs.
+- **Short prompts (Q1)**: Minion peaks at approximately 45 seconds, remote at around 9 seconds, and local at about 39 seconds. This indicates Minion's overhead/latency is most pronounced on small inputs.
 
 - **Long prompts (Q4)**: Minion (~30 s) versus local (~41 s) versus remote (~7 s), showing that Minion scales better with input length than local inference does.
 

@@ -35,7 +35,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/minionbench.git
+git clone https://github.com/singhh5050/minionbench.git
 cd minionbench
 
 # Install dependencies
